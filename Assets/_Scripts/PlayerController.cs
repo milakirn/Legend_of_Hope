@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,16 +7,24 @@ public class PlayerController : MonoBehaviour
     private Vector2 movementInput;
     private Vector2 lookInput;
     private PlayerControls controlsPlayer;
+    private PlayerSpawn playerSpawn;
+    private Animator animator;
 
     public float speed = 5f;
-    public float rotationSpeed = 15f;
+    public float rotationSpeed = 2f;
+    public float attackDuration = 1.0f; // Длительность атаки (время проигрывания анимации)
+
+    private bool isAttacking = false;
+    private float attackTimer = 0f;
 
     private void Awake()
     {
         controlsPlayer = new PlayerControls();
         characterController = GetComponent<CharacterController>();
+        playerSpawn = GetComponent<PlayerSpawn>();
+        animator = GetComponent<Animator>();
 
-        // Включаем ввод при активации объекта
+        playerSpawn.SpawnPlayer();
     }
 
     private void Update()
@@ -29,11 +36,37 @@ public class PlayerController : MonoBehaviour
             Vector3 moveDirection = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
             Vector3 move = transform.TransformDirection(moveDirection) * speed * Time.deltaTime;
             characterController.Move(move);
+
+            animator.SetBool("IsMoving", true);
+        }
+        else
+        {
+            animator.SetBool("IsMoving", false);
         }
 
         // Вращаем персонаж вокруг оси Y (вертикальная ось) на основе ввода мыши или джойстика
         Vector3 rotation = new Vector3(0f, lookInput.x, 0f) * rotationSpeed * Time.deltaTime;
         transform.Rotate(rotation);
+
+        // Обработка атаки
+        HandleAttack();
+    }
+
+    private void HandleAttack()
+    {
+        // Если происходит атака, начинаем отсчет времени атаки и проигрываем анимацию
+        if (isAttacking)
+        {
+            attackTimer += Time.deltaTime;
+
+            // По завершении анимации сбрасываем состояние атаки
+            if (attackTimer >= attackDuration)
+            {
+                isAttacking = false;
+                attackTimer = 0f;
+                animator.SetBool("AttackBool", false);
+            }
+        }
     }
 
     private void OnEnable()
@@ -47,6 +80,9 @@ public class PlayerController : MonoBehaviour
         // Подписываемся на событие действия Look
         controlsPlayer.Player.Look.performed += ctx => lookInput = ctx.ReadValue<Vector2>();
         controlsPlayer.Player.Look.canceled += ctx => lookInput = Vector2.zero;
+
+        // Подписываемся на событие действия Attack
+        controlsPlayer.Player.Attack.performed += ctx => StartAttack();
     }
 
     private void OnDisable()
@@ -58,6 +94,23 @@ public class PlayerController : MonoBehaviour
         // Отписываемся от события действия Look
         controlsPlayer.Player.Look.performed -= ctx => lookInput = ctx.ReadValue<Vector2>();
         controlsPlayer.Player.Look.canceled -= ctx => lookInput = Vector2.zero;
+
+        // Отписываемся от события действия Attack
+        controlsPlayer.Player.Attack.performed -= ctx => StartAttack();
+
         controlsPlayer.Disable();
+    }
+
+    private void StartAttack()
+    {
+        // Если не находимся в процессе атаки, начинаем атаку
+        if (!isAttacking)
+        {
+            // Запуск анимации атаки
+            animator.SetBool("AttackBool", true);
+
+            // Запуск атаки
+            isAttacking = true;
+        }
     }
 }
