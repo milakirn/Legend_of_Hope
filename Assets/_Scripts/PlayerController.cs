@@ -10,7 +10,7 @@ public class PlayerController : MonoBehaviour
     private PlayerSpawn playerSpawn;
     private Animator animator;
 
-    public float speed = 5f;
+    public float speed = 1f;
     public float rotationSpeed = 2f;
     public float attackDuration = 1.0f; // Длительность атаки (время проигрывания анимации)
 
@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour
         playerSpawn.SpawnPlayer();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         // Применяем движение к персонажу только при наличии ввода
         if (movementInput.magnitude > 0f)
@@ -43,13 +43,16 @@ public class PlayerController : MonoBehaviour
         {
             animator.SetBool("IsMoving", false);
         }
+    }
+
+    private void Update()
+    {
+        // Обработка атаки
+        HandleAttack();
 
         // Вращаем персонаж вокруг оси Y (вертикальная ось) на основе ввода мыши или джойстика
         Vector3 rotation = new Vector3(0f, lookInput.x, 0f) * rotationSpeed * Time.deltaTime;
         transform.Rotate(rotation);
-
-        // Обработка атаки
-        HandleAttack();
     }
 
     private void HandleAttack()
