@@ -10,6 +10,9 @@ public class PlayerController : MonoBehaviour
     private PlayerSpawn playerSpawn;
     private Animator animator;
 
+    [SerializeField]
+    private Camera mainCamera;
+
     public float speed = 1f;
     public float rotationSpeed = 2f;
     public float attackDuration = 1.0f; // Длительность атаки (время проигрывания анимации)
@@ -50,9 +53,11 @@ public class PlayerController : MonoBehaviour
         // Обработка атаки
         HandleAttack();
 
-        // Вращаем персонаж вокруг оси Y (вертикальная ось) на основе ввода мыши или джойстика
-        Vector3 rotation = new Vector3(0f, lookInput.x, 0f) * rotationSpeed * Time.deltaTime;
-        transform.Rotate(rotation);
+        transform.rotation = mainCamera.transform.rotation;
+
+        //// Вращаем персонаж вокруг оси Y (вертикальная ось) на основе ввода мыши или джойстика
+        //Vector3 rotation = new Vector3(0f, lookInput.x, 0f) * rotationSpeed * Time.deltaTime;
+        //transform.Rotate(rotation);
     }
 
     private void HandleAttack()
