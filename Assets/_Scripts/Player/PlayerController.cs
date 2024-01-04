@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Timeline;
 
 public class PlayerController : MonoBehaviour
 {
@@ -35,9 +37,23 @@ public class PlayerController : MonoBehaviour
         // Применяем движение к персонажу только при наличии ввода
         if (movementInput.magnitude > 0f)
         {
+            // Получаем направление взгляда персонажа в мировых координатах
+            Vector3 cameraForward = Camera.main.transform.forward;
+            Vector3 cameraRight = Camera.main.transform.right;
+
+            // Убираем y-компоненту, чтобы избежать движения по вертикали
+            cameraForward.y = 0f;
+            cameraRight.y = 0f;
+
+            // Нормализуем векторы направлений
+            cameraForward.Normalize();
+            cameraRight.Normalize();
+
+            // Считаем направление движения в зависимости от ввода и направления взгляда
+            Vector3 moveDirection = (cameraForward * movementInput.y + cameraRight * movementInput.x).normalized;
+
             // Применяем движение к персонажу
-            Vector3 moveDirection = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
-            Vector3 move = transform.TransformDirection(moveDirection) * speed * Time.deltaTime;
+            Vector3 move = moveDirection * speed * Time.deltaTime;
             characterController.Move(move);
 
             animator.SetBool("IsMoving", true);
@@ -54,26 +70,47 @@ public class PlayerController : MonoBehaviour
         HandleAttack();
 
         transform.rotation = mainCamera.transform.rotation;
-
-        //// Вращаем персонаж вокруг оси Y (вертикальная ось) на основе ввода мыши или джойстика
-        //Vector3 rotation = new Vector3(0f, lookInput.x, 0f) * rotationSpeed * Time.deltaTime;
-        //transform.Rotate(rotation);
     }
 
     private void HandleAttack()
     {
-        // Если происходит атака, начинаем отсчет времени атаки и проигрываем анимацию
+        //// Если происходит атака, начинаем отсчет времени атаки и проигрываем анимацию
+        //if (isAttacking)
+        //{
+        //    attackTimer += Time.deltaTime;
+
+        //    // По завершении анимации сбрасываем состояние атаки
+        //    if (attackTimer >= attackDuration)
+        //    {
+        //        isAttacking = false;
+        //        attackTimer = 0f;
+        //        animator.SetBool("LightAttack", false);
+        //    }
+        //}
+
         if (isAttacking)
         {
-            attackTimer += Time.deltaTime;
+            AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-            // По завершении анимации сбрасываем состояние атаки
-            if (attackTimer >= attackDuration)
+            if (animatorStateInfo.IsName("LightAttack") && animatorStateInfo.normalizedTime >= 1f)
             {
                 isAttacking = false;
-                attackTimer = 0f;
-                animator.SetBool("AttackBool", false);
+                animator.SetBool("LightAttack", false);
             }
+            //else if (!animatorStateInfo.IsName("LightAttack") && animator.GetBool("LightAttack"))
+            //{
+            //    animator.SetBool("LightAttack", false);
+            //}
+
+            if (animatorStateInfo.IsName("HeavyAttack") && animatorStateInfo.normalizedTime >= 1f)
+            {
+                isAttacking = false;
+                animator.SetBool("HeavyAttack", false);
+            }
+            //else if (!animatorStateInfo.IsName("HeavyAttack") && animator.GetBool("HeavyAttack"))
+            //{
+            //    animator.SetBool("HeavyAttack", false);
+            //}
         }
     }
 
@@ -90,7 +127,8 @@ public class PlayerController : MonoBehaviour
         controlsPlayer.Player.Look.canceled += ctx => lookInput = Vector2.zero;
 
         // Подписываемся на событие действия Attack
-        controlsPlayer.Player.Attack.performed += ctx => StartAttack();
+        controlsPlayer.Player.Attack.performed += ctx => StartLightAttack();
+        controlsPlayer.Player.SecondAttack.performed += ctx => StartHeavyAttack();
     }
 
     private void OnDisable()
@@ -104,18 +142,32 @@ public class PlayerController : MonoBehaviour
         controlsPlayer.Player.Look.canceled -= ctx => lookInput = Vector2.zero;
 
         // Отписываемся от события действия Attack
-        controlsPlayer.Player.Attack.performed -= ctx => StartAttack();
+        controlsPlayer.Player.Attack.performed -= ctx => StartLightAttack();
+        controlsPlayer.Player.SecondAttack.performed -= ctx => StartHeavyAttack();
 
         controlsPlayer.Disable();
     }
 
-    private void StartAttack()
+    private void StartLightAttack()
     {
         // Если не находимся в процессе атаки, начинаем атаку
         if (!isAttacking)
         {
             // Запуск анимации атаки
-            animator.SetBool("AttackBool", true);
+            animator.SetBool("LightAttack", true);
+
+            // Запуск атаки
+            isAttacking = true;
+        }
+    }
+
+    private void StartHeavyAttack()
+    {
+        // Если не находимся в процессе атаки, начинаем атаку
+        if (!isAttacking)
+        {
+            // Запуск анимации атаки
+            animator.SetBool("HeavyAttack", true);
 
             // Запуск атаки
             isAttacking = true;
