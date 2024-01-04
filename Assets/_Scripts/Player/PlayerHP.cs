@@ -10,7 +10,7 @@ public class PlayerHP : MonoBehaviour
     private float testDamage = 20f;
 
     public float PlayerHp
-    { get { return playerHp; } }
+    { get { return playerHp; } set { playerHp = value; } }
 
     [SerializeField]
     private Slider playerHPSlider;
