@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
     public float attackDuration = 1.0f; // ƒлительность атаки (врем€ проигрывани€ анимации)
 
     private bool isAttacking = false;
-    private float attackTimer = 0f;
+    //private float attackTimer = 0f;
 
     private void Awake()
     {
